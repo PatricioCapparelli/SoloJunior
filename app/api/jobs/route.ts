@@ -45,6 +45,7 @@ export async function POST(request: Request) {
                 workMode: validation.data.workMode,
                 company: validation.data.company,
                 url: validation.data.url,
+                userId: userId,
             },
         });
 
@@ -62,7 +63,7 @@ export async function POST(request: Request) {
 export async function GET() {
     try {
         const jobs = await prisma.job.findMany({
-            orderBy: { createdAt: 'desc' } 
+            orderBy: { createdAt: 'desc' }
         });
         return NextResponse.json(jobs);
     } catch (error) {

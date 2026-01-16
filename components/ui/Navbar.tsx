@@ -27,6 +27,14 @@ export default function Navbar() {
           </SignedOut>
 
           <SignedIn>
+            {/* Link NUEVO */}
+            <Link 
+              href="/my-jobs" 
+              className="text-sm font-medium text-slate-600 hover:text-blue-600 mr-4"
+            >
+              Mis Publicaciones
+            </Link>
+
             <Button asChild variant="default" size="sm">
               <Link href="/jobs/new">Publicar Oferta</Link>
             </Button>

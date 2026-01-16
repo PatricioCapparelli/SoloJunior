@@ -27,18 +27,17 @@ enum WorkMode {
 // --- MODELOS ---
 
 model Job {
-  id          String    @id @default(cuid()) // IDs seguros tipo 'clh...'
+  id          String    @id @default(cuid())
   title       String
   description String    @db.Text
-  
-  // Relación con los Enums
   seniority   Seniority
   workMode    WorkMode
-  
   company     String
-  location    String?   // El ? significa que es opcional (null)
-  salary      String?   // Ej: "100k - 150k" o "A convenir"
-  url         String    // Link para aplicar (o email)
+  location    String?
+  salary      String?
+  url         String
+  
+  userId      String    
   
   active      Boolean   @default(true)
   createdAt   DateTime  @default(now())
