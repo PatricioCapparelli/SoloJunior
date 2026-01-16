@@ -1,0 +1,46 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// --- ENUMS (Las reglas de oro) ---
+
+// 1. Solo permitimos estos niveles. Si intentan meter "SSR", explota.
+enum Seniority {
+  PASANTIA  // Estudiantes
+  TRAINEE   // 0 experiencia
+  JUNIOR    // < 2 años
+}
+
+enum WorkMode {
+  REMOTO
+  HIBRIDO
+  PRESENCIAL
+}
+
+// --- MODELOS ---
+
+model Job {
+  id          String    @id @default(cuid()) // IDs seguros tipo 'clh...'
+  title       String
+  description String    @db.Text
+  
+  // Relación con los Enums
+  seniority   Seniority
+  workMode    WorkMode
+  
+  company     String
+  location    String?   // El ? significa que es opcional (null)
+  salary      String?   // Ej: "100k - 150k" o "A convenir"
+  url         String    // Link para aplicar (o email)
+  
+  active      Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
