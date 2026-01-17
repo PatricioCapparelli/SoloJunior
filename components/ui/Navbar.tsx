@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Code2 } from "lucide-react";
 import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs"; // <--- Importaciones nuevas
+import { ModeToggle } from "../ModeTogle";
 
 export default function Navbar() {
   return (
@@ -38,7 +39,7 @@ export default function Navbar() {
             <Button asChild variant="default" size="sm">
               <Link href="/jobs/new">Publicar Oferta</Link>
             </Button>
-            
+            <ModeToggle />
             <UserButton afterSignOutUrl="/" />
           </SignedIn>
 
