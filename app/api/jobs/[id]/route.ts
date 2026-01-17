@@ -87,7 +87,7 @@ export async function PATCH(
         // 1. Validamos los datos que llegan
         const validation = editSchema.safeParse(body);
         if (!validation.success) {
-            return NextResponse.json({ error: validation.error.errors }, { status: 400 });
+            return NextResponse.json({ error: validation.error.issues }, { status: 400 });
         }
 
         // 2. Verificamos que el trabajo exista y sea del usuario
