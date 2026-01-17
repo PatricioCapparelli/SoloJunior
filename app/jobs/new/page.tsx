@@ -26,6 +26,7 @@ const formSchema = z.object({
   workMode: z.enum(["REMOTO", "HIBRIDO", "PRESENCIAL"]),
   company: z.string().min(2, "El nombre de la empresa es requerido"),
   url: z.string().url("Debe ser una URL válida (https://...)"),
+  imageUrl: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
