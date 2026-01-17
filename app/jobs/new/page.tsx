@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import ImageUpload from "@/components/ui/ImageUpload";
+import ImageUpload from "@/components/ImageUpload";
 
 const formSchema = z.object({
   title: z.string().min(3, "El título debe tener al menos 3 caracteres"),
