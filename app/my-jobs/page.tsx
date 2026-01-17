@@ -5,6 +5,8 @@ import { Card, CardHeader, CardTitle, CardDescription, CardFooter } from "@/comp
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
+import DeleteJobButton from "@/components/ui/DeleteJobButton";
+import { Pencil } from "lucide-react";
 
 const prisma = new PrismaClient();
 
@@ -49,11 +51,16 @@ export default async function MyJobsPage() {
                 <CardTitle className="mt-2">{job.title}</CardTitle>
                 <CardDescription>{job.company}</CardDescription>
               </CardHeader>
-              <CardFooter className="flex justify-between gap-2">
-                 <Button variant="outline" className="w-full" asChild>
-                    <Link href={`/jobs/${job.id}`}>Ver</Link>
-                 </Button>
-                 {/* Acá a futuro podrías poner un botón de "Borrar" o "Editar" */}
+              <CardFooter className="flex justify-between gap-2 pt-4 border-t border-slate-100">
+                <Button variant="outline" className="flex-1" asChild>
+                  <Link href={`/jobs/${job.id}`}>Ver detalle</Link>
+                </Button>
+                <Button variant="outline" size="sm" asChild className="mr-2">
+                  <Link href={`/jobs/${job.id}/edit`}>
+                    <Pencil size={16} />
+                  </Link>
+                </Button>
+                <DeleteJobButton jobId={job.id} />
               </CardFooter>
             </Card>
           ))}
