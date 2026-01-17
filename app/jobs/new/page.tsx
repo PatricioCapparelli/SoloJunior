@@ -5,7 +5,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -18,6 +17,7 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import ImageUpload from "@/components/ui/ImageUpload";
 
 const formSchema = z.object({
   title: z.string().min(3, "El título debe tener al menos 3 caracteres"),
@@ -37,12 +37,13 @@ export default function NewJobPage() {
   const {
     register,
     handleSubmit,
-    setValue, // Necesario para los Selects de Shadcn
+    setValue,
+    watch,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      seniority: "TRAINEE", // Valor por defecto
+      seniority: "TRAINEE",
       workMode: "REMOTO",
     },
   });
@@ -131,6 +132,17 @@ export default function NewJobPage() {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+
+            {/* LOGO DE EMPRESA */}
+            <div className="space-y-2">
+              <Label>Logo de la Empresa (Opcional)</Label>
+              <ImageUpload
+                value={watch("imageUrl") || ""} 
+                onChange={(url) => setValue("imageUrl", url)} 
+                onRemove={() => setValue("imageUrl", "")} 
+              />
+              <input type="hidden" {...register("imageUrl")} />
             </div>
 
             {/* Descripción */}

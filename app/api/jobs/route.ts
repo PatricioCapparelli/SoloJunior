@@ -14,6 +14,7 @@ const createJobSchema = z.object({
     workMode: z.enum(['REMOTO', 'HIBRIDO', 'PRESENCIAL']),
     company: z.string().min(2),
     url: z.string().url("Debe ser una URL válida"),
+    imageUrl: z.string().optional(),
 });
 
 // Crear un nuevo trabajo
@@ -46,6 +47,7 @@ export async function POST(request: Request) {
                 company: validation.data.company,
                 url: validation.data.url,
                 userId: userId,
+                imageUrl: validation.data.imageUrl,
             },
         });
 

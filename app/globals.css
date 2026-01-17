@@ -1,6 +1,8 @@
+@import "@uploadthing/react/styles.css";
 @import "tailwindcss";
 @import "tw-animate-css";
 
+@tailwind base;
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {

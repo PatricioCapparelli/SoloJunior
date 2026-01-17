@@ -12,6 +12,7 @@ const editSchema = z.object({
     workMode: z.enum(["REMOTO", "HIBRIDO", "PRESENCIAL"]).optional(),
     company: z.string().min(2).optional(),
     url: z.string().url().optional(),
+    imageUrl: z.string().optional(),
 });
 
 // GET: Obtener un solo trabajo (para rellenar el form de edición)
