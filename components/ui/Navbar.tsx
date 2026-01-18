@@ -1,25 +1,40 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Code2 } from "lucide-react";
-import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs"; // <--- Importaciones nuevas
-import { ModeToggle } from "../ModeTogle";
+import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
+import { ModeToggle } from "@/components/ModeToggle";
+import Image from "next/image";
 
 export default function Navbar() {
   return (
-    <nav className="border-b border-slate-200 bg-white/75 backdrop-blur-md sticky top-0 z-50">
+    <nav className="border-b bg-white dark:bg-slate-950 sticky top-0 z-50 transition-colors">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
-        
-        <Link href="/" className="flex items-center gap-2 font-bold text-xl text-slate-900">
-          <div className="bg-blue-600 p-1.5 rounded-lg text-white">
-            <Code2 size={24} />
+
+        {/* LOGO + TEXTO */}
+        <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity group">
+
+          <div className="relative w-10 h-10 rounded-full overflow-hidden border border-slate-200 dark:border-slate-700 shadow-sm shrink-0">
+            <Image
+              src="/logo.png"
+              alt="SoloJunior Logo"
+              fill
+              className="object-contain p-0.5"
+              priority
+            />
           </div>
-          Solo<span className="text-blue-600">Junior</span>
+
+          <span className="font-bold text-xl text-slate-900 dark:text-white">
+            Solo<span className="text-[#5AB1C3]">Junior</span> {/* <--- COLOR NEÓN AQUÍ */}
+          </span>
         </Link>
 
+        {/* MENÚ */}
         <div className="flex items-center gap-4">
-          <Link href="/" className="text-sm font-medium text-slate-600 hover:text-blue-600">
-            Buscar Empleos
+
+          <Link href="/" className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-[#5AB1C3] transition-colors"> {/* <--- HOVER NEÓN */}
+            Buscar
           </Link>
+
+          <ModeToggle />
 
           <SignedOut>
             <SignInButton mode="modal">
@@ -28,19 +43,21 @@ export default function Navbar() {
           </SignedOut>
 
           <SignedIn>
-            {/* Link NUEVO */}
-            <Link 
-              href="/my-jobs" 
-              className="text-sm font-medium text-slate-600 hover:text-blue-600 mr-4"
+            <Link
+              href="/my-jobs"
+              className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-[#5AB1C3] mr-2 transition-colors"
             >
-              Mis Publicaciones
+              Mis Jobs
             </Link>
 
-            <Button asChild variant="default" size="sm">
-              <Link href="/jobs/new">Publicar Oferta</Link>
+            {/* BOTÓN PUBLICAR CON EL COLOR NEÓN */}
+            <Button asChild variant="default" size="sm" className="bg-[#5AB1C3] text-white hover:bg-[#489aa8]">
+              <Link href="/jobs/new">Publicar</Link>
             </Button>
-            <ModeToggle />
-            <UserButton afterSignOutUrl="/" />
+
+            <div className="ml-2">
+              <UserButton afterSignOutUrl="/" />
+            </div>
           </SignedIn>
 
         </div>

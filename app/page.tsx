@@ -1,141 +1,102 @@
-import { PrismaClient } from '@prisma/client';
-import Link from 'next/link';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import JobListItem from "@/components/JobListItem";
 import { Button } from "@/components/ui/button";
-import { Briefcase, Building2 } from "lucide-react"; 
-import JobFilter from '@/components/ui/JobFilter';
-import Image from "next/image"; 
+import { Input } from "@/components/ui/input";
+import { PrismaClient } from "@prisma/client";
+import { Search } from "lucide-react";
+import Link from "next/link";
+import Image from "next/image";
 
 const prisma = new PrismaClient();
 
-async function getJobs(query: string) {
-  const jobs = await prisma.job.findMany({
-    where: {
+async function getJobs(query?: string) {
+  const where = query
+    ? {
       OR: [
-        { title: { contains: query, mode: 'insensitive' } },
-        { company: { contains: query, mode: 'insensitive' } },
-        { description: { contains: query, mode: 'insensitive' } },
-      ]
-    },
-    orderBy: { createdAt: 'desc' },
+        { title: { contains: query, mode: "insensitive" as const } },
+        { company: { contains: query, mode: "insensitive" as const } },
+      ],
+    }
+    : {};
+
+  const jobs = await prisma.job.findMany({
+    where,
+    orderBy: { createdAt: "desc" },
   });
   return jobs;
 }
 
-export default async function Home(props: {
-  searchParams?: Promise<{ q?: string }>;
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>;
 }) {
-  const searchParams = await props.searchParams;
-  const query = searchParams?.q || "";
-
-  const jobs = await getJobs(query);
+  const { q } = await searchParams;
+  const jobs = await getJobs(q);
 
   return (
-    <main className="container mx-auto py-10 px-4">
-      <div className="text-center mb-8">
-        <h1 className="text-4xl font-bold tracking-tight text-slate-900 sm:text-6xl mb-4">
-          Solo<span className="text-blue-600">Junior</span> 🚀
+    <main className="container mx-auto py-10 px-4 max-w-5xl">
+
+      {/* --- HERO SECTION --- */}
+      <div className="text-center mb-12 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+
+        {/* 1. TÍTULO CON LOGO GRANDE AL LADO */}
+        <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center justify-center gap-4 sm:gap-6">
+          <span>Solo<span className="text-[#5AB1C3]">Junior</span></span>
+
+          <div className="relative w-20 h-20 sm:w-28 sm:h-28 shrink-0 hover:scale-110 transition-transform duration-300">
+            <Image
+              src="/logo.png"
+              alt="Yaguareté Cibernético"
+              fill
+              className="object-contain drop-shadow-lg rounded-full border border-slate-200 dark:border-slate-700"
+              priority
+            />
+          </div>
         </h1>
-        <p className="text-lg text-slate-600 max-w-2xl mx-auto mb-8">
-          La bolsa de trabajo donde la experiencia de 5 años NO es un requisito.
+
+        <p className="text-lg sm:text-xl text-slate-600 dark:text-slate-300 max-w-2xl mx-auto">
+          La bolsa de trabajo donde la experiencia de 5 años <span className="font-bold text-slate-900 dark:text-white">NO</span> es un requisito.
         </p>
 
-        <JobFilter />
+        <form className="flex flex-row sm:flex-row gap-3 max-w-xl mx-auto mt-8">
+          <div className="relative flex-grow">
+            <Search className="absolute left-3 top-2.5 -translate-y-1/2 text-slate-400 pointer-events-none" size={20} />
+            <Input
+              type="text"
+              name="q"
+              placeholder="Buscar por tecnología o empresa..."
+              className="pl-10 h-12 text-base bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"
+              defaultValue={q}
+            />
+          </div>
+          <Button type="submit" size="lg" className="h-12 bg-[#5AB1C3] hover:bg-[#489aa8] text-white transition-colors font-semibold">
+            Buscar
+          </Button>
+        </form>
 
-        <Button asChild size="lg">
-          <Link href="/jobs/new">Publicar un Empleo Gratis</Link>
-        </Button>
-      </div>
-
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {jobs.map((job) => (
-          <Card key={job.id} className="hover:shadow-lg transition-shadow border-slate-200">
-
-            {/* CAMBIO PRINCIPAL: Modificamos el Header para incluir la imagen */}
-            <CardHeader>
-              <div className="flex gap-4 items-start">
-
-                {/* 1. LÓGICA DEL LOGO (Izquierda) */}
-                <div className="flex-shrink-0">
-                  {job.imageUrl ? (
-                    <div className="relative h-12 w-12 rounded-md border border-slate-200 overflow-hidden">
-                      <Image
-                        src={job.imageUrl}
-                        alt={job.company}
-                        fill
-                        className="object-contain p-1" // p-1 para que no toque los bordes si es muy grande
-                      />
-                    </div>
-                  ) : (
-                    // Si no tiene logo, mostramos el edificio gris por defecto
-                    <div className="h-12 w-12 rounded-md border border-slate-200 bg-slate-50 flex items-center justify-center text-slate-400">
-                      <Building2 size={24} />
-                    </div>
-                  )}
-                </div>
-
-                {/* 2. DATOS DEL TITULO (Derecha) */}
-                <div className="flex-1 space-y-1">
-                  <div className="flex justify-between items-start">
-                    <Badge variant={job.seniority === 'PASANTIA' ? 'secondary' : 'default'}>
-                      {job.seniority}
-                    </Badge>
-                    <span className="text-xs text-slate-400 font-mono">
-                      {new Date(job.createdAt).toLocaleDateString()}
-                    </span>
-                  </div>
-
-                  <CardTitle className="text-lg leading-tight">{job.title}</CardTitle>
-
-                  <CardDescription className="flex items-center gap-1">
-                    {job.company}
-                  </CardDescription>
-                </div>
-
-              </div>
-            </CardHeader>
-
-            <CardContent>
-              <p className="text-sm text-slate-600 line-clamp-3 mb-4">
-                {job.description}
-              </p>
-              <div className="flex gap-4 text-xs text-slate-500 font-medium">
-                <div className="flex items-center gap-1">
-                  <Briefcase className="w-3 h-3" />
-                  {job.workMode}
-                </div>
-              </div>
-            </CardContent>
-
-            <CardFooter>
-              <Button asChild className="w-full" variant="outline">
-                <Link href={`/jobs/${job.id}`}>
-                  Ver más detalles
-                </Link>
-              </Button>
-            </CardFooter>
-          </Card>
-        ))}
-      </div>
-
-      {jobs.length === 0 && (
-        <div className="text-center text-slate-500 py-20">
-          <p>No encontramos ofertas para "{query}".</p>
-          {query && (
-            <Button variant="link" asChild>
-              <Link href="/">Ver todas</Link>
-            </Button>
-          )}
+        {/* 3. Botón "Publicar": Limpio, sin logo */}
+        <div className="mt-6">
+          <Button asChild variant="outline" size="sm" className="gap-2 border-[#5AB1C3] text-[#5AB1C3] hover:bg-[#5AB1C3]/10 dark:border-[#5AB1C3] dark:text-[#5AB1C3] hover:text-[#5AB1C3]">
+            <Link href="/jobs/new">
+              Publicar una oferta gratis
+            </Link>
+          </Button>
         </div>
-      )}
+
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-4xl mx-auto animate-in fade-in duration-700 delay-300">
+        {jobs.length > 0 ? (
+          jobs.map((job) => (
+            <JobListItem key={job.id} job={job} />
+          ))
+        ) : (
+          <div className="col-span-full text-center py-12 text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-800">
+            <p className="text-lg mb-2">No encontramos ofertas para esa búsqueda 😢</p>
+            <p className="text-sm">¡Probá con otros términos!</p>
+          </div>
+        )}
+      </div>
     </main>
   );
 }

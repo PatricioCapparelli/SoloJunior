@@ -54,9 +54,11 @@ export async function DELETE(
             return NextResponse.json({ error: "Trabajo no encontrado" }, { status: 404 });
         }
 
+        const isAdmin = userId === process.env.ADMIN_USER_ID;
+
         // 4. EL CHECK DE SEGURIDAD MÁS IMPORTANTE
         // ¿El que quiere borrar es el mismo que lo creó?
-        if (job.userId !== userId) {
+        if (job.userId !== userId && !isAdmin) {
             return NextResponse.json({ error: "Prohibido: No es tu oferta" }, { status: 403 });
         }
 
