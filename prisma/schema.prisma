@@ -23,6 +23,17 @@ enum WorkMode {
 
 // --- MODELOS ---
 
+// Modelo para guardar empleos favoritos
+model SavedJob {
+  id        String   @id @default(cuid())
+  userId    String   
+  jobId     String
+  job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, jobId])
+}
+
 model Job {
   id          String    @id @default(cuid())
   title       String
@@ -34,8 +45,22 @@ model Job {
   salary      String?
   url         String
   imageUrl    String?
-  userId      String    
+  userId      String   
+  views       Int      @default(0) 
   active      Boolean   @default(true)
+  verified    Boolean  @default(false)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  reports     Report[] 
+  savedBy     SavedJob[]
+}
+
+// Modelo para reportar ofertas sospechosas
+model Report {
+  id        String   @id @default(cuid())
+  jobId     String
+  job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  reason    String   // Motivo del reporte (Spam, Fraude, etc.)
+  details   String?  // Texto opcional
+  createdAt DateTime @default(now())
 }

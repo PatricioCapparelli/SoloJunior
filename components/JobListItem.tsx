@@ -1,58 +1,78 @@
 import { Job } from "@prisma/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Briefcase, MapPin, Building2, CalendarClock } from "lucide-react";
+import { MapPin, Building2, CalendarClock, Eye, BadgeCheck } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import SaveJobButton from "./SaveJobButton";
 
 interface JobListItemProps {
     job: Job;
+    isSaved?: boolean;
 }
 
-export default function JobListItem({ job }: JobListItemProps) {
+export default function JobListItem({ job, isSaved = false }: JobListItemProps) {
     return (
-        <Link href={`/jobs/${job.id}`} className="block group">
-            <Card className="transition-all duration-300 hover:shadow-md hover:border-[#5AB1C3] dark:hover:border-[#5AB1C3] hover:-translate-y-1">
-                <CardContent className="p-5 flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+        <Link href={`/jobs/${job.id}`} className="block group relative">
+            <Card className="transition-all duration-300 hover:shadow-md hover:border-[#5AB1C3] dark:hover:border-[#5AB1C3] hover:-translate-y-1 h-full">
+                <CardContent className="p-5 flex flex-col gap-4 h-full">
 
-                    {/* LOGO DE LA EMPRESA */}
-                    <div className="flex-shrink-0">
-                        {job.imageUrl ? (
-                            <div className="relative w-12 h-12 sm:w-16 sm:h-16 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-800 bg-white">
-                                <Image
-                                    src={job.imageUrl}
-                                    alt={job.company}
-                                    fill
-                                    className="object-contain p-1"
-                                />
+                    {/* --- HEADER DE LA CARD --- */}
+                    <div className="flex items-start justify-between gap-4">
+                        <div className="flex gap-4 items-start">
+
+                            {/* 1. LOGO */}
+                            <div className="shrink-0">
+                                {job.imageUrl ? (
+                                    <div className="relative w-12 h-12 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-800 bg-white">
+                                        <Image
+                                            src={job.imageUrl}
+                                            alt={job.company}
+                                            fill
+                                            className="object-contain p-1"
+                                        />
+                                    </div>
+                                ) : (
+                                    <div className="w-12 h-12 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-400">
+                                        <Building2 size={24} />
+                                    </div>
+                                )}
                             </div>
-                        ) : (
-                            <div className="w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-400">
-                                <Building2 size={24} />
+
+                            {/* 2. DATOS PRINCIPALES (Título y Empresa) */}
+                            <div>
+                                <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 group-hover:text-[#5AB1C3] transition-colors line-clamp-1">
+                                    {job.title}
+                                </h3>
+
+                                {/* ACÁ VA LA EMPRESA CON EL TILDE AZUL (Restaurado) */}
+                                <div className="text-sm text-slate-500 dark:text-slate-400 flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
+                                    <span className="flex items-center gap-1 font-medium text-slate-700 dark:text-slate-300">
+                                        <Building2 size={14} />
+                                        {job.company}
+                                        {/* Lógica del Verificado */}
+                                        {job.verified && (
+                                            <BadgeCheck size={14} className="text-blue-500 ml-0.5" />
+                                        )}
+                                    </span>
+                                    <span className="flex items-center gap-1">
+                                        <MapPin size={14} /> Argentina
+                                    </span>
+                                </div>
                             </div>
-                        )}
-                    </div>
+                        </div>
 
-                    {/* INFORMACIÓN PRINCIPAL */}
-                    <div className="flex-grow space-y-1">
-                        <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 group-hover:text-[#5AB1C3] transition-colors">
-                            {job.title}
-                        </h3>
-
-                        <div className="text-sm text-slate-500 dark:text-slate-400 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-                            <span className="flex items-center gap-1 font-medium text-slate-700 dark:text-slate-300">
-                                <Building2 size={14} /> {job.company}
-                            </span>
-                            <span className="flex items-center gap-1">
-                                <MapPin size={14} /> Argentina
-                            </span>
+                        {/* 3. BOTÓN DE GUARDAR (Arriba a la derecha) */}
+                        <div className="z-10 -mt-2 -mr-2">
+                            <SaveJobButton jobId={job.id} initialIsSaved={isSaved} />
                         </div>
                     </div>
 
-                    {/* ETIQUETAS Y FECHA (Derecha) */}
-                    <div className="flex flex-row sm:flex-col items-center sm:items-end gap-3 sm:gap-2 w-full sm:w-auto justify-between sm:justify-center mt-2 sm:mt-0">
+                    {/* --- FOOTER DE LA CARD (Badges y Stats) --- */}
+                    <div className="mt-auto flex items-center justify-between pt-2">
 
-                        <div className="flex gap-2">
+                        {/* Badges de Modalidad y Seniority */}
+                        <div className="flex gap-2 flex-wrap">
                             <Badge variant="secondary" className="font-normal bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
                                 {job.workMode}
                             </Badge>
@@ -67,10 +87,20 @@ export default function JobListItem({ job }: JobListItemProps) {
                             </Badge>
                         </div>
 
-                        <span className="text-xs text-slate-400 flex items-center gap-1">
-                            <CalendarClock size={12} />
-                            {new Date(job.createdAt).toLocaleDateString()}
-                        </span>
+                        {/* Fecha y Vistas alineados a la derecha */}
+                        <div className="flex flex-col items-end gap-1">
+                            <span className="text-xs text-slate-400 flex items-center gap-1">
+                                <CalendarClock size={12} />
+                                {new Date(job.createdAt).toLocaleDateString()}
+                            </span>
+
+                            {job.views > 0 && (
+                                <span className="text-xs font-medium text-[#5AB1C3] flex items-center gap-1 animate-in fade-in">
+                                    <Eye size={12} />
+                                    {job.views}
+                                </span>
+                            )}
+                        </div>
                     </div>
 
                 </CardContent>

@@ -1,21 +1,21 @@
 import JobListItem from "@/components/JobListItem";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/prisma"; // ✅ Usamos el singleton para evitar errores de conexión
 import { Search } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import { auth } from "@clerk/nextjs/server";
 
-const prisma = new PrismaClient();
-
+// Función para obtener los empleos (Server Side)
 async function getJobs(query?: string) {
   const where = query
     ? {
-      OR: [
-        { title: { contains: query, mode: "insensitive" as const } },
-        { company: { contains: query, mode: "insensitive" as const } },
-      ],
-    }
+        OR: [
+          { title: { contains: query, mode: "insensitive" as const } },
+          { company: { contains: query, mode: "insensitive" as const } },
+        ],
+      }
     : {};
 
   const jobs = await prisma.job.findMany({
@@ -30,8 +30,26 @@ export default async function Home({
 }: {
   searchParams: Promise<{ q?: string }>;
 }) {
+  // 1. Obtenemos búsqueda y empleos
   const { q } = await searchParams;
   const jobs = await getJobs(q);
+
+  // 2. Lógica de Favoritos: ¿Qué empleos guardó este usuario?
+  const { userId } = await auth();
+  let savedJobIds: string[] = [];
+
+  if (userId && jobs.length > 0) {
+    const savedJobs = await prisma.savedJob.findMany({
+      where: {
+        userId,
+        // Solo buscamos favoritos dentro de la lista que estamos mostrando (optimización)
+        jobId: { in: jobs.map((job) => job.id) },
+      },
+      select: { jobId: true },
+    });
+    // Convertimos a un array simple de IDs: ["id1", "id2"]
+    savedJobIds = savedJobs.map((s) => s.jobId);
+  }
 
   return (
     <main className="container mx-auto py-10 px-4 max-w-5xl">
@@ -58,8 +76,10 @@ export default async function Home({
           La bolsa de trabajo donde la experiencia de 5 años <span className="font-bold text-slate-900 dark:text-white">NO</span> es un requisito.
         </p>
 
-        <form className="flex flex-row sm:flex-row gap-3 max-w-xl mx-auto mt-8">
-          <div className="relative flex-grow">
+        {/* 2. Buscador */}
+        <form className="flex flex-col sm:flex-row gap-3 max-w-xl mx-auto mt-8">
+          <div className="relative grow">
+            {/* Ajusté 'top-2.5' a 'top-1/2' para centrado vertical perfecto */}
             <Search className="absolute left-3 top-2.5 -translate-y-1/2 text-slate-400 pointer-events-none" size={20} />
             <Input
               type="text"
@@ -74,7 +94,7 @@ export default async function Home({
           </Button>
         </form>
 
-        {/* 3. Botón "Publicar": Limpio, sin logo */}
+        {/* 3. Botón "Publicar" */}
         <div className="mt-6">
           <Button asChild variant="outline" size="sm" className="gap-2 border-[#5AB1C3] text-[#5AB1C3] hover:bg-[#5AB1C3]/10 dark:border-[#5AB1C3] dark:text-[#5AB1C3] hover:text-[#5AB1C3]">
             <Link href="/jobs/new">
@@ -85,10 +105,15 @@ export default async function Home({
 
       </div>
 
+      {/* --- LISTADO DE EMPLEOS --- */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-4xl mx-auto animate-in fade-in duration-700 delay-300">
         {jobs.length > 0 ? (
           jobs.map((job) => (
-            <JobListItem key={job.id} job={job} />
+            <JobListItem 
+                key={job.id} 
+                job={job} 
+                isSaved={savedJobIds.includes(job.id)}
+            />
           ))
         ) : (
           <div className="col-span-full text-center py-12 text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-800">

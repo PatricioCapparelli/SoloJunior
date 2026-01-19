@@ -9,8 +9,14 @@ import { ThemeProvider } from '@/components/theme-provider';
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "SoloJunior | Empleos IT para principiantes",
-  description: "La bolsa de trabajo exclusiva para Trainees y Juniors.",
+  title: {
+    default: "SoloJunior | Bolsa de trabajo para Trainees y Juniors",
+    template: "%s | SoloJunior", 
+  },
+  description: "La plataforma donde la experiencia de 5 años NO es un requisito. Encontrá tu primer empleo IT en programación, diseño y datos.",
+  twitter: {
+    card: "summary_large_image",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
