@@ -24,3 +24,15 @@ export async function deleteJobAndReport(jobId: string) {
   revalidatePath("/admin");
   revalidatePath("/");
 }
+
+export async function toggleJobApproval(jobId: string, currentStatus: boolean) {
+  await checkAdmin(); 
+
+  await prisma.job.update({
+    where: { id: jobId },
+    data: { approved: !currentStatus },
+  });
+
+  revalidatePath("/admin");
+  revalidatePath("/");
+}

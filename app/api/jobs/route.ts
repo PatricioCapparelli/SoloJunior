@@ -1,10 +1,8 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from "@/lib/prisma"; // 1. IMPORTAR LA INSTANCIA GLOBAL (No crear una nueva)
 import { z } from 'zod';
 import { auth } from '@clerk/nextjs/server';
-
-// Instancia global de Prisma
-const prisma = new PrismaClient();
+import { ratelimit } from "@/lib/ratelimit";
 
 // Esquema de validación estricto
 const createJobSchema = z.object({
@@ -26,8 +24,15 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "No autorizado" }, { status: 401 });
         }
 
-        const body = await request.json();
+        // --- 🛡️ RATE LIMIT (Upstash) ---
+        const { success } = await ratelimit.limit(userId);
 
+        if (!success) {
+            return new NextResponse("Demasiados intentos. Esperá un rato antes de volver a publicar.", { status: 429 });
+        }
+        // -------------------------------
+
+        const body = await request.json();
         const validation = createJobSchema.safeParse(body);
 
         if (!validation.success) {
@@ -48,6 +53,7 @@ export async function POST(request: Request) {
                 url: validation.data.url,
                 userId: userId,
                 imageUrl: validation.data.imageUrl,
+                approved: false, 
             },
         });
 
@@ -65,6 +71,9 @@ export async function POST(request: Request) {
 export async function GET() {
     try {
         const jobs = await prisma.job.findMany({
+            where: {
+                approved: true 
+            },
             orderBy: { createdAt: 'desc' }
         });
         return NextResponse.json(jobs);

@@ -13,7 +13,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 
-export default function Navbar() {  
+export default function Navbar() {
   return (
     <nav className="border-b bg-white dark:bg-slate-950 sticky top-0 z-50 transition-colors">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
@@ -29,9 +29,6 @@ export default function Navbar() {
               priority
             />
           </div>
-          <span className="font-bold text-xl text-slate-900 dark:text-white">
-            Solo<span className="text-[#5AB1C3]">Junior</span>
-          </span>
         </Link>
 
         {/* =======================================================
@@ -53,8 +50,8 @@ export default function Navbar() {
 
           <SignedIn>
 
-            <Link 
-              href="/saved-jobs" 
+            <Link
+              href="/saved-jobs"
               className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-[#5AB1C3] mr-4 transition-colors flex items-center gap-1"
             >
               Guardados
@@ -101,27 +98,23 @@ export default function Navbar() {
 
             <SheetContent side="right" className="w-[300px]">
               <SheetHeader>
-                <SheetTitle className="flex items-center gap-2 mb-4">
-                  <div className="relative w-8 h-8">
-                    <Image src="/logo.png" alt="Logo" fill className="object-contain" />
+                <SheetTitle className="flex items-center gap-2">
+                  <div className="lg:w-15 lg:h-15  relative w-8 h-8">
+                    <Link href="/" className="text-lg font-medium hover:text-[#5AB1C3]">
+                      <Image src="/logo.png" alt="Logo" fill className="object-contain rounded-full" />
+                    </Link>
                   </div>
-                  Menu SoloJunior
                 </SheetTitle>
               </SheetHeader>
 
-              <div className="flex flex-col gap-4">
-                <Link href="/" className="text-lg font-medium hover:text-[#5AB1C3]">
-                  🏠 Inicio / Buscar
-                </Link>
-
+              <div className="flex flex-col gap-3">
                 <SignedIn>
-                  
                   <Link href="/saved-jobs" className="text-lg font-medium hover:text-[#5AB1C3]">
-                    ❤️ Mis Guardados
+                    ❤️ Guardados
                   </Link>
 
                   <Link href="/my-jobs" className="text-lg font-medium hover:text-[#5AB1C3]">
-                    📋 Mis Publicaciones
+                    📋 Publicaciones
                   </Link>
 
                   <Button asChild className="bg-[#5AB1C3] text-white hover:bg-[#489aa8] w-full mt-2">

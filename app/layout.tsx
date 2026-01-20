@@ -5,6 +5,7 @@ import "./globals.css";
 import Navbar from "@/components/ui/Navbar";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from '@/components/theme-provider';
+import AdminButton from "@/components/AdminButton";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -33,6 +34,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           >
             <Navbar />
             {children}
+            <AdminButton />
             <Toaster />
           </ThemeProvider>
           

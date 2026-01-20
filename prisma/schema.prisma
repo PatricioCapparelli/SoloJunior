@@ -49,6 +49,7 @@ model Job {
   views       Int      @default(0) 
   active      Boolean   @default(true)
   verified    Boolean  @default(false)
+  approved    Boolean  @default(false)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   reports     Report[] 
