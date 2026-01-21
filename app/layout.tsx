@@ -6,6 +6,7 @@ import Navbar from "@/components/ui/Navbar";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from '@/components/theme-provider';
 import AdminButton from "@/components/AdminButton";
+import { Analytics } from "@vercel/analytics/react";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -37,6 +38,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <AdminButton />
             <Toaster />
           </ThemeProvider>
+
+          <Analytics />
           
         </body>
       </html>

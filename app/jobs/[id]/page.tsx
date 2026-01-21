@@ -19,7 +19,6 @@ import { auth } from "@clerk/nextjs/server";
 import DeleteJobButton from "@/components/ui/DeleteJobButton";
 import ReportJobButton from "@/components/ReportJobButton";
 
-// ✅ CAMBIO 1: Importamos la librería nueva (más liviana y compatible con Vercel)
 import sanitizeHtml from 'sanitize-html'; 
 
 interface PageProps {
@@ -62,18 +61,15 @@ export default async function JobDetailPage({ params }: PageProps) {
   const isOwner = userId === job.userId;
   const canDelete = isAdmin || isOwner;
 
-  // ✅ CAMBIO 2: Sanitizar con sanitize-html
-  // Configuración: Permitimos negritas, listas, links, etc. pero NADA de scripts.
   const cleanDescription = sanitizeHtml(job.description, {
     allowedTags: [
       "b", "i", "em", "strong", "a", "p", "br", "ul", "ol", "li",
       "h1", "h2", "h3", "h4", "h5", "h6", "blockquote", "code", "pre"
     ],
     allowedAttributes: {
-      'a': [ 'href', 'target', 'rel' ], // Permitimos links
-      'img': [ 'src', 'alt' ] // Permitimos imágenes en la descripción si hubiera
+      'a': [ 'href', 'target', 'rel' ], 
+      'img': [ 'src', 'alt' ] 
     },
-    // Opcional: Forzar que los links se abran en otra pestaña
     transformTags: {
       'a': sanitizeHtml.simpleTransform('a', { target: '_blank', rel: 'noopener noreferrer' })
     }

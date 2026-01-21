@@ -5,7 +5,6 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 
-// ✅ CORREGIDO: Solo niveles iniciales. Chau Semi Senior.
 const seniorities = ["PASANTIA", "TRAINEE", "JUNIOR"];
 const workModes = ["REMOTO", "HIBRIDO", "PRESENCIAL"];
 

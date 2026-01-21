@@ -1,8 +1,13 @@
 import { NextResponse } from 'next/server';
-import { prisma } from "@/lib/prisma"; // 1. IMPORTAR LA INSTANCIA GLOBAL (No crear una nueva)
+import { prisma } from "@/lib/prisma";
 import { z } from 'zod';
-import { auth } from '@clerk/nextjs/server';
+import { auth, currentUser } from '@clerk/nextjs/server'; // ✅ Agregamos currentUser
 import { ratelimit } from "@/lib/ratelimit";
+import { Resend } from 'resend'; // ✅ Importamos Resend
+import { JobPostedEmail } from "@/components/emails/JobPostedEmail"; // ✅ Importamos tu diseño
+
+// 1. Inicializamos Resend
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 // Esquema de validación estricto
 const createJobSchema = z.object({
@@ -15,18 +20,18 @@ const createJobSchema = z.object({
     imageUrl: z.string().optional(),
 });
 
-// Crear un nuevo trabajo
+// Crear un nuevo trabajo (POST)
 export async function POST(request: Request) {
     try {
         const { userId } = await auth();
+        const user = await currentUser(); // ✅ Obtenemos los datos del usuario (Email y Nombre)
 
-        if (!userId) {
+        if (!userId || !user) {
             return NextResponse.json({ error: "No autorizado" }, { status: 401 });
         }
 
         // --- 🛡️ RATE LIMIT (Upstash) ---
         const { success } = await ratelimit.limit(userId);
-
         if (!success) {
             return new NextResponse("Demasiados intentos. Esperá un rato antes de volver a publicar.", { status: 429 });
         }
@@ -42,7 +47,7 @@ export async function POST(request: Request) {
             );
         }
 
-        // Guardar en PostgreSQL
+        // 2. Guardar en PostgreSQL
         const newJob = await prisma.job.create({
             data: {
                 title: validation.data.title,
@@ -53,9 +58,36 @@ export async function POST(request: Request) {
                 url: validation.data.url,
                 userId: userId,
                 imageUrl: validation.data.imageUrl,
-                approved: false, 
+                approved: false,
             },
         });
+
+        // 3. 📧 ENVIAR EL EMAIL CON RESEND
+        // Sacamos el email y nombre real del usuario de Clerk
+        const userEmail = user.emailAddresses[0].emailAddress;
+        const userName = user.firstName || "Dev";
+
+        try {
+            await resend.emails.send({
+                // Usamos el dominio de prueba de Resend (funciona siempre)
+                from: 'SoloJunior <onboarding@resend.dev>',
+                
+                // ⚠️ IMPORTANTE: En modo gratuito (Sandbox), esto SOLO envía si 'userEmail'
+                // es el mismo email con el que te registraste en Resend.
+                to: userEmail,
+                
+                subject: '¡Recibimos tu oferta! 🚀',
+                react: JobPostedEmail({ 
+                    jobTitle: newJob.title, 
+                    companyName: newJob.company, 
+                    userName: userName,
+                    jobId: newJob.id 
+                }),
+            });
+            console.log(`📧 Email enviado exitosamente a ${userEmail}`);
+        } catch (emailError) {
+            console.error("❌ Error enviando email con Resend:", emailError);
+        }
 
         return NextResponse.json(newJob, { status: 201 });
 
@@ -72,7 +104,7 @@ export async function GET() {
     try {
         const jobs = await prisma.job.findMany({
             where: {
-                approved: true 
+                approved: true
             },
             orderBy: { createdAt: 'desc' }
         });
