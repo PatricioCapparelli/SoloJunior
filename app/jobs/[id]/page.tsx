@@ -18,7 +18,9 @@ import Image from "next/image";
 import { auth } from "@clerk/nextjs/server";
 import DeleteJobButton from "@/components/ui/DeleteJobButton";
 import ReportJobButton from "@/components/ReportJobButton";
-import DOMPurify from "isomorphic-dompurify"; // ✅ CAMBIO 1: Importar el colador
+
+// ✅ CAMBIO 1: Importamos la librería nueva (más liviana y compatible con Vercel)
+import sanitizeHtml from 'sanitize-html'; 
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -60,9 +62,22 @@ export default async function JobDetailPage({ params }: PageProps) {
   const isOwner = userId === job.userId;
   const canDelete = isAdmin || isOwner;
 
-  // ✅ CAMBIO 2: Sanitizar la descripción (El paso por el colador)
-  // Esto elimina <script> pero deja <b>, <p>, <br>, etc.
-  const cleanDescription = DOMPurify.sanitize(job.description);
+  // ✅ CAMBIO 2: Sanitizar con sanitize-html
+  // Configuración: Permitimos negritas, listas, links, etc. pero NADA de scripts.
+  const cleanDescription = sanitizeHtml(job.description, {
+    allowedTags: [
+      "b", "i", "em", "strong", "a", "p", "br", "ul", "ol", "li",
+      "h1", "h2", "h3", "h4", "h5", "h6", "blockquote", "code", "pre"
+    ],
+    allowedAttributes: {
+      'a': [ 'href', 'target', 'rel' ], // Permitimos links
+      'img': [ 'src', 'alt' ] // Permitimos imágenes en la descripción si hubiera
+    },
+    // Opcional: Forzar que los links se abran en otra pestaña
+    transformTags: {
+      'a': sanitizeHtml.simpleTransform('a', { target: '_blank', rel: 'noopener noreferrer' })
+    }
+  });
 
   return (
     <main className="container mx-auto py-10 px-4 max-w-4xl">
@@ -132,7 +147,7 @@ export default async function JobDetailPage({ params }: PageProps) {
             <CardContent className="p-6">
               <h2 className="text-xl font-semibold mb-4 text-slate-900 dark:text-white">Sobre el puesto</h2>
               
-              {/* ✅ CAMBIO 3: Usar dangerouslySetInnerHTML con el texto limpio */}
+              {/* ✅ CAMBIO 3: Renderizado seguro */}
               <div 
                 className="prose max-w-none text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed font-sans"
                 dangerouslySetInnerHTML={{ __html: cleanDescription }}
