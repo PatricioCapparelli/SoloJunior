@@ -18,8 +18,7 @@ import Image from "next/image";
 import { auth } from "@clerk/nextjs/server";
 import DeleteJobButton from "@/components/ui/DeleteJobButton";
 import ReportJobButton from "@/components/ReportJobButton";
-
-import sanitizeHtml from 'sanitize-html'; 
+import sanitizeHtml from 'sanitize-html';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -61,22 +60,75 @@ export default async function JobDetailPage({ params }: PageProps) {
   const isOwner = userId === job.userId;
   const canDelete = isAdmin || isOwner;
 
+  // Sanitizar descripción
   const cleanDescription = sanitizeHtml(job.description, {
     allowedTags: [
       "b", "i", "em", "strong", "a", "p", "br", "ul", "ol", "li",
       "h1", "h2", "h3", "h4", "h5", "h6", "blockquote", "code", "pre"
     ],
     allowedAttributes: {
-      'a': [ 'href', 'target', 'rel' ], 
-      'img': [ 'src', 'alt' ] 
+      'a': [ 'href', 'target', 'rel' ],
+      'img': [ 'src', 'alt' ]
     },
     transformTags: {
       'a': sanitizeHtml.simpleTransform('a', { target: '_blank', rel: 'noopener noreferrer' })
     }
   });
 
+  // ---------------------------------------------------------
+  // 🧠 SEO PRO: Generamos los datos estructurados (JSON-LD)
+  // ---------------------------------------------------------
+  
+  // Calculamos fecha de expiración (por defecto 3 meses)
+  const datePosted = job.createdAt.toISOString();
+  const validThrough = new Date(job.createdAt);
+  validThrough.setMonth(validThrough.getMonth() + 3);
+
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'JobPosting',
+    title: job.title,
+    description: cleanDescription, // Google prefiere HTML aquí
+    datePosted: datePosted,
+    validThrough: validThrough.toISOString(),
+    employmentType: job.seniority === 'PASANTIA' ? 'INTERN' : 'FULL_TIME',
+    hiringOrganization: {
+      '@type': 'Organization',
+      name: job.company,
+      sameAs: job.url, // Link para postular
+      logo: job.imageUrl || 'https://solo-junior.vercel.app/logo.png' // Tu logo por defecto
+    },
+    jobLocation: {
+        '@type': 'Place',
+        address: {
+            '@type': 'PostalAddress',
+            addressCountry: 'AR', // Por defecto Argentina
+            addressLocality: 'Argentina' 
+        }
+    },
+    // Si es remoto, agregamos la propiedad especial de Google
+    ...(job.workMode === 'REMOTO' && {
+        jobLocationType: 'TELECOMMUTE' 
+    }),
+    baseSalary: {
+        '@type': 'MonetaryAmount',
+        currency: 'ARS',
+        value: {
+            '@type': 'QuantitativeValue',
+            value: 0, // 0 indica "A convenir" (Google exige este campo a veces)
+            unitText: 'MONTH'
+        }
+    }
+  };
+
   return (
     <main className="container mx-auto py-10 px-4 max-w-4xl">
+      
+      {/* 👇 ACÁ ESTÁ EL MAPA PARA LOS ROBOTS DE GOOGLE */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
 
       <div className="mb-6">
         <Link href="/" className="text-sm text-slate-500 hover:text-[#5AB1C3] transition-colors flex items-center gap-2">
@@ -142,13 +194,10 @@ export default async function JobDetailPage({ params }: PageProps) {
           <Card className="border-slate-200 dark:border-slate-800">
             <CardContent className="p-6">
               <h2 className="text-xl font-semibold mb-4 text-slate-900 dark:text-white">Sobre el puesto</h2>
-              
-              {/* ✅ CAMBIO 3: Renderizado seguro */}
               <div 
                 className="prose max-w-none text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed font-sans"
                 dangerouslySetInnerHTML={{ __html: cleanDescription }}
               />
-
             </CardContent>
           </Card>
 
