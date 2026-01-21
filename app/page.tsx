@@ -1,5 +1,6 @@
 import JobListItem from "@/components/JobListItem";
 import JobFilters from "@/components/JobFilters";
+import PaginationControls from "@/components/ui/PaginationControls"; // ✅ Nuevo import
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { prisma } from "@/lib/prisma";
@@ -8,8 +9,11 @@ import Link from "next/link";
 import Image from "next/image";
 import { auth } from "@clerk/nextjs/server";
 
-// --- BACKEND ---
-async function getJobs(query?: string, seniority?: string, workMode?: string) {
+// Configuramos límite por página
+const ITEMS_PER_PAGE = 10;
+
+// --- BACKEND MODIFICADO PARA PAGINACIÓN ---
+async function getJobs(query?: string, seniority?: string, workMode?: string, page: number = 1) {
   const where: any = { 
     AND: [ 
       { approved: true } 
@@ -37,20 +41,37 @@ async function getJobs(query?: string, seniority?: string, workMode?: string) {
 
   if (where.AND.length === 0) delete where.AND;
 
-  const jobs = await prisma.job.findMany({
-    where,
-    orderBy: { createdAt: "desc" },
-  });
-  return jobs;
+  // ✅ Ejecutamos dos consultas en paralelo:
+  // 1. Los trabajos de ESTA página.
+  // 2. El conteo TOTAL (para saber cuántas páginas hay).
+  const [jobs, totalCount] = await Promise.all([
+    prisma.job.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      take: ITEMS_PER_PAGE,           // Traer solo 10
+      skip: (page - 1) * ITEMS_PER_PAGE, // Saltar los anteriores
+    }),
+    prisma.job.count({ where }),      // Contar el total
+  ]);
+
+  return { jobs, totalCount };
 }
 
 export default async function Home({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; seniority?: string; workMode?: string }>;
+  searchParams: Promise<{ q?: string; seniority?: string; workMode?: string; page?: string }>;
 }) {
-  const { q, seniority, workMode } = await searchParams;
-  const jobs = await getJobs(q, seniority, workMode);
+  const { q, seniority, workMode, page } = await searchParams;
+  
+  // Convertimos el string "page" a número (si no existe, es 1)
+  const currentPage = page ? parseInt(page) : 1;
+
+  // Obtenemos jobs y el total
+  const { jobs, totalCount } = await getJobs(q, seniority, workMode, currentPage);
+  
+  // Calculamos total de páginas
+  const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
 
   const { userId } = await auth();
   let savedJobIds: string[] = [];
@@ -70,7 +91,7 @@ export default async function Home({
     <main className="container mx-auto py-8 px-4 max-w-7xl">
       <div className="grid grid-cols-1 lg:grid-cols-[250px_1fr] gap-10 items-start">
 
-        {/* 1. HEADER (PRIMERO EN EL CÓDIGO = PRIMERO EN CELULAR) */}
+        {/* 1. HEADER (INTACTO) */}
         <section className="lg:col-start-2 shadow-sm text-center">
             <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white flex flex-row sm:flex-row items-center justify-center gap-4 mb-6">
               <span>Solo<span className="text-[#5AB1C3]">Junior</span></span>
@@ -112,17 +133,18 @@ export default async function Home({
             </div>
         </section>
 
-        {/* 2. FILTROS (SEGUNDO EN EL CÓDIGO = SEGUNDO EN CELULAR) */}
+        {/* 2. FILTROS (INTACTO) */}
         <aside className="lg:col-start-1 lg:row-start-1 lg:row-span-full lg:sticky lg:top-24">
           <div className="bg-white dark:bg-slate-900/50 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
             <JobFilters />
           </div>
         </aside>
 
-        {/* 3. OFERTAS (TERCERO EN EL CÓDIGO = TERCERO EN CELULAR) */}
+        {/* 3. OFERTAS (CON PAGINACIÓN) */}
         <section className="lg:col-start-2">
             <div className="mb-4 text-slate-500 text-sm font-medium ml-1">
-              {jobs.length === 1 ? '1 oferta encontrada' : `${jobs.length} ofertas encontradas`}
+              {/* Ajusté el texto para que sea más preciso */}
+              {totalCount === 1 ? '1 oferta encontrada' : `${totalCount} ofertas encontradas`}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl">
@@ -144,6 +166,15 @@ export default async function Home({
                 </div>
               )}
             </div>
+
+            {/* ✅ AGREGADO: Controles de Paginación al final */}
+            {totalCount > ITEMS_PER_PAGE && (
+              <PaginationControls 
+                hasNextPage={currentPage < totalPages}
+                hasPrevPage={currentPage > 1}
+                totalPages={totalPages}
+              />
+            )}
         </section>
 
       </div>
