@@ -143,7 +143,7 @@ export default async function JobDetailPage({ params }: PageProps) {
               {isAdmin ? "🛡️ MODO ADMIN" : "👤 GESTIONAR TU OFERTA"}
             </span>
             <span className="text-xs opacity-80">
-              Tenés permiso para eliminar esta publicación permanentemente.
+              Tenes permiso para eliminar esta publicación permanentemente.
             </span>
           </div>
           <DeleteJobButton jobId={job.id} />
