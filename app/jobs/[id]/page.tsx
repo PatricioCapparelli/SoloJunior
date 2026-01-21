@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma"; // ✅ USAR EL SINGLETON
+import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +9,7 @@ import {
   CalendarClock,
   ArrowLeft,
   Eye,
-  BadgeCheck // ✅ Icono de verificado
+  BadgeCheck
 } from "lucide-react";
 import { Metadata } from "next";
 import Link from "next/link";
@@ -17,27 +17,21 @@ import { Card, CardContent } from "@/components/ui/card";
 import Image from "next/image";
 import { auth } from "@clerk/nextjs/server";
 import DeleteJobButton from "@/components/ui/DeleteJobButton";
-import ReportJobButton from "@/components/ReportJobButton"; 
+import ReportJobButton from "@/components/ReportJobButton";
+import DOMPurify from "isomorphic-dompurify"; // ✅ CAMBIO 1: Importar el colador
 
 interface PageProps {
   params: Promise<{ id: string }>;
 }
 
-// 1. GENERACIÓN DE METADATA (SEO)
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;
-
-  const job = await prisma.job.findUnique({
-    where: { id },
-  });
-
-  if (!job) {
-    return { title: "Oferta no encontrada" };
-  }
+  const job = await prisma.job.findUnique({ where: { id } });
+  if (!job) return { title: "Oferta no encontrada" };
 
   return {
     title: `${job.title} en ${job.company}`,
-    description: `Postulate a ${job.title} en ${job.company}. Modalidad: ${job.workMode}. Seniority: ${job.seniority}.`,
+    description: `Postulate a ${job.title} en ${job.company}. Modalidad: ${job.workMode}.`,
     openGraph: {
       title: `${job.title} en ${job.company} | SoloJunior`,
       description: `¡Buscamos ${job.title}! Modalidad ${job.workMode}. Aplicá ahora.`,
@@ -49,14 +43,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function JobDetailPage({ params }: PageProps) {
   const { id } = await params;
 
-  // 2. GROWTH HACK: Incrementar vistas al cargar
   let job;
   try {
     job = await prisma.job.update({
       where: { id },
-      data: {
-        views: { increment: 1 },
-      },
+      data: { views: { increment: 1 } },
     });
   } catch (error) {
     job = await prisma.job.findUnique({ where: { id } });
@@ -64,23 +55,24 @@ export default async function JobDetailPage({ params }: PageProps) {
 
   if (!job) notFound();
 
-  // 3. LÓGICA DE ADMIN / DUEÑO
   const { userId } = await auth();
   const isAdmin = userId === process.env.ADMIN_USER_ID;
   const isOwner = userId === job.userId;
   const canDelete = isAdmin || isOwner;
 
+  // ✅ CAMBIO 2: Sanitizar la descripción (El paso por el colador)
+  // Esto elimina <script> pero deja <b>, <p>, <br>, etc.
+  const cleanDescription = DOMPurify.sanitize(job.description);
+
   return (
     <main className="container mx-auto py-10 px-4 max-w-4xl">
 
-      {/* BOTÓN VOLVER */}
       <div className="mb-6">
         <Link href="/" className="text-sm text-slate-500 hover:text-[#5AB1C3] transition-colors flex items-center gap-2">
           <ArrowLeft size={16} /> Volver a empleos
         </Link>
       </div>
 
-      {/* --- PANEL DE ADMIN (SOLO VISIBLE SI TENÉS PERMISO) --- */}
       {canDelete && (
         <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 text-red-800 dark:text-red-200 px-4 py-3 rounded-md mb-6 flex justify-between items-center animate-in fade-in slide-in-from-top-4">
           <div className="flex flex-col">
@@ -95,20 +87,12 @@ export default async function JobDetailPage({ params }: PageProps) {
         </div>
       )}
 
-      {/* ENCABEZADO PRINCIPAL */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
-
         <div className="flex items-center gap-4 w-full md:w-auto">
-          {/* LOGO DE LA EMPRESA */}
           <div className="shrink-0">
             {job.imageUrl ? (
               <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-800 bg-white">
-                <Image
-                  src={job.imageUrl}
-                  alt={job.company}
-                  fill
-                  className="object-contain p-2"
-                />
+                <Image src={job.imageUrl} alt={job.company} fill className="object-contain p-2" />
               </div>
             ) : (
               <div className="w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-400">
@@ -121,32 +105,23 @@ export default async function JobDetailPage({ params }: PageProps) {
             <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100 mb-2 leading-tight">
               {job.title}
             </h1>
-
             <div className="flex flex-wrap gap-x-4 gap-y-2 text-slate-600 dark:text-slate-400 text-sm sm:text-base">
               <span className="flex items-center gap-1 font-medium text-slate-900 dark:text-slate-200">
                 {job.company}
-                {/* ✅ BADGE DE VERIFICADO */}
                 {job.verified && (
                   <span title="Empresa Verificada" className="flex items-center ml-1">
                     <BadgeCheck size={18} className="text-blue-500" fill="#dbeafe" />
                   </span>
                 )}
               </span>
-              <span className="flex items-center gap-1">
-                <MapPin size={18} /> Argentina
-              </span>
-              <span className="flex items-center gap-1">
-                <Briefcase size={18} /> {job.workMode}
-              </span>
+              <span className="flex items-center gap-1"><MapPin size={18} /> Argentina</span>
+              <span className="flex items-center gap-1"><Briefcase size={18} /> {job.workMode}</span>
             </div>
           </div>
         </div>
 
-        {/* BOTÓN POSTULARSE */}
         <Button asChild size="lg" className="bg-[#5AB1C3] hover:bg-[#489aa8] text-white w-full md:w-auto shrink-0 font-semibold shadow-md transition-all hover:scale-105">
-          <a href={job.url} target="_blank" rel="noopener noreferrer">
-            Postularme Ahora 🚀
-          </a>
+          <a href={job.url} target="_blank" rel="noopener noreferrer">Postularme Ahora 🚀</a>
         </Button>
       </div>
 
@@ -156,33 +131,31 @@ export default async function JobDetailPage({ params }: PageProps) {
           <Card className="border-slate-200 dark:border-slate-800">
             <CardContent className="p-6">
               <h2 className="text-xl font-semibold mb-4 text-slate-900 dark:text-white">Sobre el puesto</h2>
-              <div className="prose max-w-none text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed font-sans">
-                {job.description}
-              </div>
+              
+              {/* ✅ CAMBIO 3: Usar dangerouslySetInnerHTML con el texto limpio */}
+              <div 
+                className="prose max-w-none text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed font-sans"
+                dangerouslySetInnerHTML={{ __html: cleanDescription }}
+              />
+
             </CardContent>
           </Card>
 
-          {/* ✅ BOTÓN DE REPORTAR (Al final de la descripción) */}
           <div className="mt-8 flex justify-center opacity-70 hover:opacity-100 transition-opacity">
             <ReportJobButton jobId={job.id} />
           </div>
         </div>
 
-        {/* SIDEBAR DE DETALLES */}
+        {/* SIDEBAR */}
         <div>
           <Card className="border-slate-200 dark:border-slate-800">
             <CardContent className="p-6 space-y-6">
-
               <div>
                 <h3 className="text-sm font-medium text-slate-500 mb-2">Nivel requerido</h3>
-                <Badge
-                  className="text-md px-3 py-1"
-                  variant={job.seniority === 'PASANTIA' ? 'secondary' : 'default'}
-                >
+                <Badge className="text-md px-3 py-1" variant={job.seniority === 'PASANTIA' ? 'secondary' : 'default'}>
                   {job.seniority}
                 </Badge>
               </div>
-
               <div>
                 <h3 className="text-sm font-medium text-slate-500 mb-2">Publicado el</h3>
                 <div className="flex items-center gap-2 text-slate-900 dark:text-slate-100">
@@ -190,8 +163,6 @@ export default async function JobDetailPage({ params }: PageProps) {
                   {new Date(job.createdAt).toLocaleDateString()}
                 </div>
               </div>
-
-              {/* CONTADOR DE VISTAS */}
               <div className="bg-slate-50 dark:bg-slate-900/50 p-3 rounded-lg border border-slate-100 dark:border-slate-800">
                 <div className="flex items-center gap-2 text-[#5AB1C3] font-medium">
                   <Eye size={20} />
@@ -199,7 +170,6 @@ export default async function JobDetailPage({ params }: PageProps) {
                 </div>
                 <p className="text-xs text-slate-500 mt-1">Personas interesadas en este puesto.</p>
               </div>
-
             </CardContent>
           </Card>
         </div>
@@ -207,4 +177,3 @@ export default async function JobDetailPage({ params }: PageProps) {
     </main>
   );
 }
-

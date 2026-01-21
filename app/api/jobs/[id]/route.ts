@@ -1,10 +1,9 @@
-import { z } from "zod";
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/prisma"; // ✅ USAMOS LA INSTANCIA GLOBAL (Evita colapsar la DB)
+import { z } from "zod";
 import { auth } from "@clerk/nextjs/server";
 
-const prisma = new PrismaClient();
-
+// Esquema de validación para edición (campos opcionales)
 const editSchema = z.object({
     title: z.string().min(3).optional(),
     description: z.string().min(10).optional(),
@@ -15,7 +14,7 @@ const editSchema = z.object({
     imageUrl: z.string().optional(),
 });
 
-// GET: Obtener un solo trabajo (para rellenar el form de edición)
+// GET: Obtener un solo trabajo
 export async function GET(
     request: Request,
     { params }: { params: Promise<{ id: string }> }
@@ -23,29 +22,31 @@ export async function GET(
     try {
         const { id } = await params;
         const job = await prisma.job.findUnique({ where: { id } });
-        if (!job) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
+
+        if (!job) {
+            return NextResponse.json({ error: "No encontrado" }, { status: 404 });
+        }
+
         return NextResponse.json(job);
     } catch (error) {
-        return NextResponse.json({ error: "Error" }, { status: 500 });
+        return NextResponse.json({ error: "Error interno" }, { status: 500 });
     }
 }
 
-// DELETE: Borrar una oferta
+// DELETE: Borrar una oferta (Protegido contra IDOR)
 export async function DELETE(
     request: Request,
-    { params }: { params: Promise<{ id: string }> } // Next.js 15: params es promesa
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        // 1. Verificamos usuario logueado
         const { userId } = await auth();
         if (!userId) {
             return NextResponse.json({ error: "No autorizado" }, { status: 401 });
         }
 
-        // 2. Obtenemos el ID de la URL
         const { id } = await params;
 
-        // 3. Buscamos el trabajo para ver si existe y DE QUIÉN es
+        // 1. Buscamos el trabajo
         const job = await prisma.job.findUnique({
             where: { id },
         });
@@ -54,15 +55,15 @@ export async function DELETE(
             return NextResponse.json({ error: "Trabajo no encontrado" }, { status: 404 });
         }
 
+        // 2. 🛡️ CHECK ANTI-IDOR (Dueño o Admin)
+        const isOwner = job.userId === userId;
         const isAdmin = userId === process.env.ADMIN_USER_ID;
 
-        // 4. EL CHECK DE SEGURIDAD MÁS IMPORTANTE
-        // ¿El que quiere borrar es el mismo que lo creó?
-        if (job.userId !== userId && !isAdmin) {
-            return NextResponse.json({ error: "Prohibido: No es tu oferta" }, { status: 403 });
+        if (!isOwner && !isAdmin) {
+            return NextResponse.json({ error: "⛔ Prohibido: No tenés permiso para borrar esto." }, { status: 403 });
         }
 
-        // 5. Si pasó todo, borramos
+        // 3. Borramos
         await prisma.job.delete({
             where: { id },
         });
@@ -70,35 +71,48 @@ export async function DELETE(
         return NextResponse.json({ success: true });
 
     } catch (error) {
+        console.error("Delete Error:", error);
         return NextResponse.json({ error: "Error interno" }, { status: 500 });
     }
 }
 
-// PATCH: Editar una oferta
+// PATCH: Editar una oferta (Protegido contra IDOR)
 export async function PATCH(
     request: Request,
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const { userId } = await auth();
-        if (!userId) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+        if (!userId) {
+            return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+        }
 
         const { id } = await params;
         const body = await request.json();
 
-        // 1. Validamos los datos que llegan
+        // 1. Validamos los datos con Zod
         const validation = editSchema.safeParse(body);
         if (!validation.success) {
             return NextResponse.json({ error: validation.error.issues }, { status: 400 });
         }
 
-        // 2. Verificamos que el trabajo exista y sea del usuario
+        // 2. Buscamos el trabajo
         const job = await prisma.job.findUnique({ where: { id } });
 
-        if (!job) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
-        if (job.userId !== userId) return NextResponse.json({ error: "Prohibido" }, { status: 403 });
+        if (!job) {
+            return NextResponse.json({ error: "No encontrado" }, { status: 404 });
+        }
 
-        // 3. Actualizamos solo los campos que vinieron
+        // 3. 🛡️ CHECK ANTI-IDOR (Dueño o Admin)
+        // ⚠️ Corrección clave: Antes tu código no dejaba editar al Admin. Ahora sí.
+        const isOwner = job.userId === userId;
+        const isAdmin = userId === process.env.ADMIN_USER_ID;
+
+        if (!isOwner && !isAdmin) {
+            return NextResponse.json({ error: "⛔ Prohibido: No podés editar ofertas ajenas." }, { status: 403 });
+        }
+
+        // 4. Actualizamos
         const updatedJob = await prisma.job.update({
             where: { id },
             data: validation.data,
@@ -107,6 +121,7 @@ export async function PATCH(
         return NextResponse.json(updatedJob);
 
     } catch (error) {
+        console.error("Patch Error:", error);
         return NextResponse.json({ error: "Error interno" }, { status: 500 });
     }
 }
