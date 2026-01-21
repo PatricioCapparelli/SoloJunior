@@ -1,5 +1,5 @@
 import { ImageResponse } from 'next/og';
-import { prisma } from '@/lib/prisma'; 
+import { prisma } from '@/lib/prisma';
 
 export const runtime = 'nodejs';
 export const alt = 'Detalle del Empleo - SoloJunior';
@@ -9,9 +9,11 @@ export const size = {
 };
 export const contentType = 'image/png';
 
-export default async function Image({ params }: { params: { id: string } }) {
+export default async function Image({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = await params;
+
     const job = await prisma.job.findUnique({
-        where: { id: params.id },
+        where: { id },
     });
 
     if (!job) {
@@ -35,17 +37,17 @@ export default async function Image({ params }: { params: { id: string } }) {
                     flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    border: '14px solid #5AB1C3', 
+                    border: '14px solid #5AB1C3',
                     fontFamily: 'sans-serif',
                     position: 'relative',
                 }}
             >
+                {/* Efectos de Brillo (Glow) */}
                 <div style={{ position: 'absolute', top: -100, left: -100, width: 400, height: 400, background: '#5AB1C3', borderRadius: '50%', filter: 'blur(100px)', opacity: 0.2 }} />
                 <div style={{ position: 'absolute', bottom: -100, right: -100, width: 400, height: 400, background: '#5AB1C3', borderRadius: '50%', filter: 'blur(100px)', opacity: 0.2 }} />
 
                 {/* Logo / Marca */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
-                    {/* Simulamos el texto del logo */}
                     <div style={{ fontSize: 40, color: 'white', fontWeight: 'bold' }}>
                         Solo<span style={{ color: '#5AB1C3' }}>Junior</span> 🐆
                     </div>
