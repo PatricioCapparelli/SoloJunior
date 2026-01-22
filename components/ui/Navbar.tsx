@@ -24,9 +24,9 @@ export default function Navbar() {
             <Image
               src="/logo.png"
               alt="SoloJunior Logo"
-              fill
-              className="object-contain p-0.5"
-              priority
+              width={80}  // Medida real aproximada
+              height={80} // Medida real aproximada
+              priority    // ESTO ES CLAVE: Le dice que cargue primero que todo
             />
           </div>
         </Link>
@@ -44,7 +44,7 @@ export default function Navbar() {
 
           <SignedOut>
             <SignInButton mode="modal">
-              <Button variant="outline">Ingresar</Button>
+              <Button variant="outline" aria-label="boton ingresar">Ingresar</Button>
             </SignInButton>
           </SignedOut>
 
@@ -64,7 +64,7 @@ export default function Navbar() {
               Mis Publicaciones
             </Link>
 
-            <Button asChild variant="default" size="sm" className="bg-[#5AB1C3] text-white hover:bg-[#489aa8]">
+            <Button asChild variant="default" size="sm" className="bg-[#5AB1C3] text-white hover:bg-[#489aa8]" aria-label="boton publicar oferta">
               <Link href="/jobs/new">Publicar</Link>
             </Button>
 
@@ -91,7 +91,7 @@ export default function Navbar() {
           {/* MENÚ HAMBURGUESA (Solo Mobile) */}
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="ml-1">
+              <Button variant="ghost" size="icon" className="ml-1" aria-label="Menu">
                 <Menu className="h-6 w-6" />
               </Button>
             </SheetTrigger>
@@ -101,7 +101,14 @@ export default function Navbar() {
                 <SheetTitle className="flex items-center gap-2">
                   <div className="lg:w-15 lg:h-15  relative w-8 h-8">
                     <Link href="/" className="text-lg font-medium hover:text-[#5AB1C3]">
-                      <Image src="/logo.png" alt="Logo" fill className="object-contain rounded-full" />
+                      <Image
+                        src="/logo.png"
+                        alt="SoloJunior Logo"
+                        width={80}  
+                        height={80} 
+                        priority 
+                        className="rounded-full"   
+                      />
                     </Link>
                   </div>
                 </SheetTitle>

@@ -47,7 +47,7 @@ export default function ReportJobButton({ jobId }: { jobId: string }) {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button variant="ghost" size="sm" className="text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30">
+                <Button aria-label="boton reportar oferta" variant="ghost" size="sm" className="text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30">
                     <Flag className="w-4 h-4 mr-2" />
                     Reportar Oferta
                 </Button>
@@ -87,8 +87,9 @@ export default function ReportJobButton({ jobId }: { jobId: string }) {
                 </div>
 
                 <DialogFooter>
-                    <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
+                    <Button aria-label="boton cancelar" variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
                     <Button
+                        aria-label="boton enviar reporte"
                         onClick={handleSubmit}
                         disabled={!reason || isPending}
                         className="bg-red-600 hover:bg-red-700 text-white"

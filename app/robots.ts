@@ -1,14 +1,12 @@
-import { MetadataRoute } from "next";
+import { MetadataRoute } from 'next';
 
 export default function robots(): MetadataRoute.Robots {
-    const baseUrl = "https://solo-junior.vercel.app";
-
     return {
         rules: {
-            userAgent: "*",
-            allow: "/",
-            disallow: "/admin",
+            userAgent: '*',
+            allow: '/',
+            disallow: '/admin/',
         },
-        sitemap: `${baseUrl}/sitemap.xml`,
+        sitemap: 'https://solo-junior.vercel.app/sitemap.xml',
     };
 }

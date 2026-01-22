@@ -80,6 +80,7 @@ export default function JobFilters() {
             {/* BOTÓN LIMPIAR */}
             {(searchParams.get("seniority") || searchParams.get("workMode")) && (
                 <Button
+                    aria-label="boton borrar filtros"
                     variant="outline"
                     className="w-full text-xs mt-4 hover:bg-red-50 hover:text-red-600 border-red-200"
                     onClick={() => router.push("/")}
