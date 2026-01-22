@@ -72,6 +72,8 @@ export default function NewJobPage() {
                 throw new Error(errorData.error || "Error al publicar");
             }
 
+            toast.success("¡Oferta publicada exitosamente! 🐆");
+            await new Promise((resolve) => setTimeout(resolve, 2000));
             router.push("/");
             router.refresh();
 
