@@ -109,5 +109,3 @@ Commiteá tus cambios (git commit -m 'Agregué X cosa').
 Push a la rama (git push origin feature/NuevaFeature).
 
 Abrí un Pull Request.
-
-Desarrollado con ❤️ por Capparelli.
